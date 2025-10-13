@@ -1,13 +1,9 @@
-#!/usr/bin/env python3
-"""
-grabber.py
-Busca EPGs de múltiplas fontes (XMLTV ou JSON simples) e produz um epg.xml.
-"""
-
 import sys
 import os
 import yaml
 import requests
+import gzip
+import io
 import datetime
 import xml.etree.ElementTree as ET
 from xml.dom import minidom
@@ -29,8 +25,21 @@ def fetch_url(url, timeout=30):
     r.raise_for_status()
     return r.content
 
+def is_xml(content_bytes):
+    s = content_bytes.lstrip()
+    return s.startswith(b'<')
+
+def is_gzip(content_bytes):
+    # Verifica se o conteúdo é GZIP, olhando os primeiros 2 bytes (identificadores GZIP)
+    return content_bytes[:2] == b'\x1f\x8b'
+
+def decompress_gzip(content_bytes):
+    # Descomprime o conteúdo Gzip
+    with gzip.GzipFile(fileobj=io.BytesIO(content_bytes), mode='rb') as f:
+        return f.read()
+
 def append_xmltv_root(root, other_root):
-    # move programmes and channels from other_root into root
+    # Mover programas e canais do other_root para root
     for ch in other_root.findall('channel'):
         root.append(ch)
     for prog in other_root.findall('programme'):
@@ -44,7 +53,6 @@ def json_to_xmltv(json_obj):
       "channels": [{"id": "ch1", "display-name": "Canal 1"}],
       "programs": [{"channel":"ch1","start":"20251013T150000 +0000","stop":"20251013T153000 +0000","title":"Titulo","desc":"Desc"}]
     }
-    Start/stop esperados em formato: YYYYMMDDHHMMSS ou YYYYMMDDHHMMSS +ZZZZ
     """
     tv = ET.Element('tv')
     # channels
@@ -72,10 +80,6 @@ def json_to_xmltv(json_obj):
         tv.append(prog)
     return tv
 
-def is_xml(content_bytes):
-    s = content_bytes.lstrip()
-    return s.startswith(b'<')
-
 def merge_sources(sources: List[dict], output_file='epg.xml'):
     # create root tv element
     tv_root = ET.Element('tv')
@@ -83,6 +87,8 @@ def merge_sources(sources: List[dict], output_file='epg.xml'):
     for src in sources:
         try:
             content = fetch_url(src['url'])
+            if is_gzip(content):
+                content = decompress_gzip(content)  # Descomprime se for GZIP
         except Exception as e:
             print(f"[WARN] failed to fetch {src.get('url')}: {e}")
             continue
@@ -90,7 +96,6 @@ def merge_sources(sources: List[dict], output_file='epg.xml'):
         if src.get('type') == 'xml' or is_xml(content):
             try:
                 other = ET.fromstring(content)
-                # Ensure channel elements are added without duplication
                 for ch in other.findall('channel'):
                     ch_id = ch.attrib.get('id')
                     if ch_id in seen_channels:
