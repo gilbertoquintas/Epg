@@ -5,6 +5,9 @@ on:
   schedule:
     - cron: '0 */3 * * *'   # a cada 3 horas (ajusta conforme necessidade)
 
+permissions:
+  contents: write  # Permissões de escrita para acessar e modificar arquivos
+
 jobs:
   grab:
     runs-on: ubuntu-latest
