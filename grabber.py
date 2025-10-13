@@ -91,10 +91,14 @@ def json_to_xmltv(json_obj, mappings):
     return tv
 
 
-def merge_sources(sources: List[dict], output_file='epg.xml'):
-    # create root tv element
+def merge_sources(sources: List[dict], output_file='epg.xml', mapping_file='channel_mappings.yml'):
+    # Carregar os mapeamentos de IDs do arquivo YAML
+    mappings = load_channel_id_mappings(mapping_file)
+    
+    # Criar o elemento raiz do XML
     tv_root = ET.Element('tv')
     seen_channels = set()
+    
     for src in sources:
         try:
             content = fetch_url(src['url'])
@@ -108,7 +112,12 @@ def merge_sources(sources: List[dict], output_file='epg.xml'):
             try:
                 other = ET.fromstring(content)
                 for ch in other.findall('channel'):
-                    ch_id = ch.attrib.get('id')
+                    ch_id = ch.attrib.get('id', 'unknown')  # ID do canal no XML
+                    # Aplicar o mapeamento de IDs
+                    for mapping in mappings:
+                        if mapping['original_id'] == ch_id:
+                            ch_id = mapping['new_id']  # Substitui pelo novo ID mapeado
+                            break
                     if ch_id in seen_channels:
                         continue
                     seen_channels.add(ch_id)
@@ -122,7 +131,7 @@ def merge_sources(sources: List[dict], output_file='epg.xml'):
             try:
                 import json
                 j = json.loads(content.decode('utf-8'))
-                other = json_to_xmltv(j)
+                other = json_to_xmltv(j, mappings)  # Passa os mapeamentos de IDs
                 # merge channels/programmes
                 for ch in other.findall('channel'):
                     ch_id = ch.attrib.get('id')
@@ -140,7 +149,12 @@ def merge_sources(sources: List[dict], output_file='epg.xml'):
             try:
                 other = ET.fromstring(content)
                 for ch in other.findall('channel'):
-                    ch_id = ch.attrib.get('id')
+                    ch_id = ch.attrib.get('id', 'unknown')  # ID do canal
+                    # Aplicar o mapeamento de IDs
+                    for mapping in mappings:
+                        if mapping['original_id'] == ch_id:
+                            ch_id = mapping['new_id']  # Substitui pelo novo ID mapeado
+                            break
                     if ch_id in seen_channels:
                         continue
                     seen_channels.add(ch_id)
@@ -151,11 +165,12 @@ def merge_sources(sources: List[dict], output_file='epg.xml'):
             except Exception as e:
                 print(f"[ERROR] fallback parse failed for {src.get('url')}: {e}")
 
-    # write file
+    # Escrever o arquivo de saída
     xml_bytes = pretty_xml(tv_root)
     with open(output_file, 'wb') as f:
         f.write(xml_bytes)
     print(f"Wrote {output_file} ({len(tv_root)} child elements)")
+
 
 def main():
     cfg_path = os.environ.get('CONFIG_PATH', 'config.yml')
