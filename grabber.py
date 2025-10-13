@@ -38,6 +38,11 @@ def decompress_gzip(content_bytes):
     with gzip.GzipFile(fileobj=io.BytesIO(content_bytes), mode='rb') as f:
         return f.read()
 
+def load_channel_id_mappings(mapping_file='channel_mappings.yml'):
+    with open(mapping_file, 'r') as f:
+        mappings = yaml.safe_load(f)
+    return mappings.get('mappings', [])
+
 def append_xmltv_root(root, other_root):
     # Mover programas e canais do other_root para root
     for ch in other_root.findall('channel'):
