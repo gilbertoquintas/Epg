@@ -12,8 +12,5 @@ sources:
     url: "https://example.com/epg.xml"
     type: xml
 
-  - name: exemplo-json
-    url: "https://example.com/epg.json"
-    type: json
 
 output_file: "epg.xml"
