@@ -2,7 +2,7 @@
 mappings:
   - original_id: "Star.Comedy.HD.pt"
     new_id: "Star.Comedy"
-  - original_id: "id2"
-    new_id: "id 2"
+  - original_id: "Canal.Hollywood.HD.pt"
+    new_id: "Canal Hollywood"
   - original_id: "id3"
     new_id: "id 3"
