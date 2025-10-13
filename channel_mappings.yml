@@ -1,0 +1,8 @@
+# channel_mappings.yml
+mappings:
+  - original_id: "id1"
+    new_id: "id 1"
+  - original_id: "id2"
+    new_id: "id 2"
+  - original_id: "id3"
+    new_id: "id 3"
