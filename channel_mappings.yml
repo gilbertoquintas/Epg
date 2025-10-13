@@ -6,3 +6,5 @@ mappings:
     new_id: "Canal Hollywood"
   - original_id: "Fuel.TV.HD.pt"
     new_id: "Fuel TV"
+  - original_id: "TLC.pt"
+    new_id: "TLC"
