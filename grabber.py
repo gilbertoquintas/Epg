@@ -50,22 +50,26 @@ def append_xmltv_root(root, other_root):
     for prog in other_root.findall('programme'):
         root.append(prog)
 
-def json_to_xmltv(json_obj):
-    """
-    Converte um JSON simples para um elemento <tv>.
-    JSON esperado (exemplo):
-    {
-      "channels": [{"id": "ch1", "display-name": "Canal 1"}],
-      "programs": [{"channel":"ch1","start":"20251013T150000 +0000","stop":"20251013T153000 +0000","title":"Titulo","desc":"Desc"}]
-    }
-    """
+def json_to_xmltv(json_obj, mappings):
     tv = ET.Element('tv')
+    
     # channels
     for ch in json_obj.get('channels', []):
-        ch_el = ET.Element('channel', id=str(ch.get('id') or ch.get('channel') or 'unknown'))
+        ch_id = str(ch.get('id', 'unknown'))  # ID do canal (pode vir do campo 'id')
+        
+        # Substituir o ID conforme o mapeamento
+        for mapping in mappings:
+            if mapping['original_id'] == ch_id:
+                ch_id = mapping['new_id']  # Substitui pelo novo ID mapeado
+                break
+        
+        ch_el = ET.Element('channel', id=ch_id)
+        
+        # Usar o nome do canal (display-name)
         name = ET.SubElement(ch_el, 'display-name')
         name.text = ch.get('display-name') or ch.get('name') or ch.get('title') or ch_el.attrib['id']
         tv.append(ch_el)
+    
     # programmes
     for p in json_obj.get('programs', []) + json_obj.get('programmes', []):
         channel = p.get('channel')
@@ -76,14 +80,16 @@ def json_to_xmltv(json_obj):
         prog = ET.Element('programme', {
             'start': start,
             'stop': stop,
-            'channel': str(channel)
+            'channel': str(channel)  # Aqui, 'channel' agora contém o ID modificado
         })
         t = ET.SubElement(prog, 'title')
         t.text = p.get('title') or ''
         d = ET.SubElement(prog, 'desc')
         d.text = p.get('desc') or p.get('description') or ''
         tv.append(prog)
+    
     return tv
+
 
 def merge_sources(sources: List[dict], output_file='epg.xml'):
     # create root tv element
