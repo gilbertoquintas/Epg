@@ -4,3 +4,6 @@ mappings:
     new_id: "Star.Comedy"
   - original_id: "Canal.Hollywood.HD.pt"
     new_id: "Canal Hollywood"
+  - original_id: "Fuel. TV.HD.pt"
+    new_id: "Fuel TV"
+
