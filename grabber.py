@@ -4,6 +4,7 @@ import yaml
 import gzip
 import shutil
 import os
+import xml.etree.ElementTree as ET
 
 # Configuração do logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
@@ -57,33 +58,48 @@ def download_and_decompress_file(url: str, output_path: str):
         logging.error(f"Erro desconhecido: {e}")
         raise
 
-# Função para alterar o atributo 'id' de um canal no arquivo channel_mappings.yml
-def update_channel_id(channel_mappings_path: str, channel_name: str, new_id: str):
+def apply_channel_id_mapping(xmltv_path: str, channel_mappings_path: str, output_path: str = None):
     try:
+        # Carregar o mapeamento
         with open(channel_mappings_path, 'r', encoding='utf-8') as f:
-            channel_mappings = yaml.safe_load(f)
+            mappings = yaml.safe_load(f)
         
-        # Encontra o canal pelo nome e altera o ID
-        channel_found = False
-        for channel in channel_mappings.get('channels', []):
-            if channel.get('name') == channel_name:
-                logging.info(f"Canal encontrado: {channel_name}. Atualizando o ID para {new_id}.")
-                channel['id'] = new_id
-                channel_found = True
-                break
-        
-        if not channel_found:
-            logging.error(f"Canal {channel_name} não encontrado no arquivo de mapeamento.")
-            raise ValueError(f"Canal {channel_name} não encontrado no arquivo de mapeamento.")
-        
-        # Salva as alterações no arquivo
-        with open(channel_mappings_path, 'w', encoding='utf-8') as f:
-            yaml.safe_dump(channel_mappings, f, default_flow_style=False, allow_unicode=True)
-        
-        logging.info(f"ID do canal {channel_name} atualizado com sucesso para {new_id}.")
-    
+        mapping_dict = {
+            channel['original_id']: channel['new_id']
+            for channel in mappings.get('channels', [])
+            if channel.get('original_id') and channel.get('new_id')
+        }
+
+        if not mapping_dict:
+            raise ValueError("Nenhum mapeamento válido encontrado no arquivo YAML.")
+
+        # Parse do XML
+        tree = ET.parse(xmltv_path)
+        root = tree.getroot()
+
+        # Atualizar <channel id="...">
+        for channel in root.findall("channel"):
+            orig_id = channel.get("id")
+            if orig_id in mapping_dict:
+                new_id = mapping_dict[orig_id]
+                logging.info(f"Atualizando canal: {orig_id} → {new_id}")
+                channel.set("id", new_id)
+
+        # Atualizar <programme channel="...">
+        for programme in root.findall("programme"):
+            orig_id = programme.get("channel")
+            if orig_id in mapping_dict:
+                new_id = mapping_dict[orig_id]
+                logging.info(f"Atualizando programa: {orig_id} → {new_id}")
+                programme.set("channel", new_id)
+
+        # Salvar novo arquivo
+        output_file = output_path if output_path else xmltv_path
+        tree.write(output_file, encoding="utf-8", xml_declaration=True)
+        logging.info(f"Arquivo XML atualizado salvo em: {output_file}")
+
     except Exception as e:
-        logging.error(f"Erro ao atualizar o ID do canal {channel_name}: {e}")
+        logging.error(f"Erro ao aplicar mapeamento de canais no XML: {e}")
         raise
 
 # Função principal que carrega a URL e faz o download
@@ -96,7 +112,7 @@ def main(config_path: str, output_path: str = 'epg.xml', channel_mappings_path: 
         download_and_decompress_file(url, output_path)
         
         # Exemplo de atualização do ID do canal
-        update_channel_id(channel_mappings_path, 'Canal Exemplo', 'novo-id-123')
+        apply_channel_id_mapping('epg.xml', 'channel_mappings.yml')
     
     except Exception as e:
         logging.error(f"Erro no processo: {e}")
