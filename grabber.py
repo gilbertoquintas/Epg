@@ -3,7 +3,7 @@ import requests
 import yaml
 import gzip
 import shutil
-from urllib.parse import urlparse
+import os
 
 # Configuração do logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
@@ -63,7 +63,7 @@ def main(config_path: str, output_path: str = 'epg.xml'):
         # Carrega a URL do arquivo de configuração
         url = load_config(config_path)
         
-        # Faz o download e descomprime o arquivo
+        # Faz o download e descomprime o arquivo XMLTV
         download_and_decompress_file(url, output_path)
     except Exception as e:
         logging.error(f"Erro no processo: {e}")
