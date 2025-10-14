@@ -88,8 +88,8 @@ def apply_channel_id_mapping(xml_path: str, mapping: dict):
         for programme in root.findall("programme"):
             orig_id = programme.get("channel")
             if orig_id in mapping:
-                programme.set("channel", mapping[orig_id])
-                logging.debug(f"Programa {orig_id} → {mapping[orig_id]}")
+                programme.set("channel", mapping[orig_id].get("new_id", orig_id))
+                logging.debug(f"Programa {orig_id} → {mapping[orig_id].get('new_id', orig_id)}")
 
         tree.write(xml_path, encoding='utf-8', xml_declaration=True)
         logging.info(f"Arquivo XMLTV atualizado e sobrescrito: {xml_path}")
