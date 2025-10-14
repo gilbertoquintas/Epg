@@ -89,7 +89,7 @@ def save_compressed_gz(filename: str, data: bytes):
         f.write(data)
     print(f"[INFO] Arquivo salvo e comprimido como {filename}")
 
-xml_data = pretty_xml(channels)
+xml_data = pretty_xml
 
 # Salvar o arquivo XML comprimido em .gz
 save_compressed_gz('output.xml.gz', xml_data)
