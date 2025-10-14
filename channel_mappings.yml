@@ -1,5 +1,5 @@
 # channel_mappings.yml
-mappings:
+channels:
   - original_id: "Canal.Hollywood.HD.pt"
     new_id: "Canal.Hollywood"
   - original_id: "SPORT.TV1.HD.pt"
