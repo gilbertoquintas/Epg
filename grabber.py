@@ -3,6 +3,7 @@ import requests
 import gzip
 import io
 import xml.etree.ElementTree as ET
+from lxml import etree
 import yaml
 from typing import Dict
 
@@ -50,17 +51,26 @@ def fetch_and_decompress_url(url: str) -> bytes:
         if is_gzip(content):
             logging.info("[INFO] Content is GZIP, decompressing...")
             content = decompress_gzip(content)
+        
         return content
     except requests.exceptions.RequestException as e:
         logging.error(f"[ERROR] Request failed: {e}")
         raise
 
-# Função para mapear os IDs no XML de acordo com o arquivo de mapeamento
+# Função para mapear os IDs no XML
 def map_channel_ids(xml_data: bytes, mappings: Dict[str, str]) -> bytes:
     try:
-        root = ET.fromstring(xml_data)
-    except ET.ParseError as e:
+        # Detecta a codificação do XML, assumindo UTF-8
+        xml_str = xml_data.decode('utf-8')  # Certificando-se de que o XML está em UTF-8
+
+        # Faz o parsing usando lxml para maior robustez
+        root = etree.fromstring(xml_str)
+    except etree.XMLSyntaxError as e:
         logging.error(f"[ERROR] Failed to parse XML: {e}")
+        logging.error(f"[ERROR] XML data: {xml_data[:200]}...")  # Exibe os primeiros 200 bytes para debug
+        raise
+    except UnicodeDecodeError as e:
+        logging.error(f"[ERROR] Failed to decode XML data to UTF-8: {e}")
         raise
 
     # Itera sobre todos os elementos com o atributo 'id'
@@ -72,7 +82,7 @@ def map_channel_ids(xml_data: bytes, mappings: Dict[str, str]) -> bytes:
             channel.set('id', new_id)  # Atualiza o ID com o novo valor
 
     # Retorna o XML modificado em formato de bytes
-    return ET.tostring(root, encoding='utf-8')
+    return etree.tostring(root, encoding='utf-8', pretty_print=True)
 
 # Função para salvar o XML como um arquivo GZIP
 def save_as_gzip(content: bytes, output_path: str):
