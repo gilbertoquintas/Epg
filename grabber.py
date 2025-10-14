@@ -25,8 +25,13 @@ def download_file(url: str, output_path: str):
         logging.info(f"Iniciando o download do arquivo de {url}")
         response = requests.get(url)
         response.raise_for_status()  # Garante que a requisição foi bem-sucedida
-        with open(output_path, 'wb') as f:
-            f.write(response.content)
+        
+        # Verifica a codificação do conteúdo da resposta
+        encoding = response.encoding or 'utf-8'  # Se não houver codificação definida, usa 'utf-8'
+        
+        # Salva o conteúdo com a codificação correta
+        with open(output_path, 'w', encoding=encoding) as f:
+            f.write(response.text)  # Utiliza response.text para garantir que o conteúdo é decodificado corretamente
         logging.info(f"Arquivo salvo como {output_path}")
     except requests.exceptions.RequestException as e:
         logging.error(f"Erro ao baixar o arquivo: {e}")
