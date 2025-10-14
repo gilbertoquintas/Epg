@@ -2,7 +2,6 @@ import logging
 import requests
 import gzip
 import io
-import xml.etree.ElementTree as ET
 from lxml import etree
 import yaml
 from typing import Dict
@@ -47,7 +46,6 @@ def fetch_and_decompress_url(url: str) -> bytes:
         response.raise_for_status()
         content = response.content
         
-        # Verifica se é GZIP e descomprime
         if is_gzip(content):
             logging.info("[INFO] Content is GZIP, decompressing...")
             content = decompress_gzip(content)
@@ -60,10 +58,7 @@ def fetch_and_decompress_url(url: str) -> bytes:
 # Função para mapear os IDs no XML
 def map_channel_ids(xml_data: bytes, mappings: Dict[str, str]) -> bytes:
     try:
-        # Detecta a codificação do XML, assumindo UTF-8
-        xml_str = xml_data.decode('utf-8')  # Certificando-se de que o XML está em UTF-8
-
-        # Faz o parsing usando lxml para maior robustez
+        xml_str = xml_data.decode('utf-8')
         root = etree.fromstring(xml_str)
     except etree.XMLSyntaxError as e:
         logging.error(f"[ERROR] Failed to parse XML: {e}")
@@ -73,15 +68,13 @@ def map_channel_ids(xml_data: bytes, mappings: Dict[str, str]) -> bytes:
         logging.error(f"[ERROR] Failed to decode XML data to UTF-8: {e}")
         raise
 
-    # Itera sobre todos os elementos com o atributo 'id'
     for channel in root.findall('.//channel'):
         channel_id = channel.get('id')
         if channel_id and channel_id in mappings:
             new_id = mappings[channel_id]
             logging.info(f"[INFO] Mapping id {channel_id} to {new_id}")
-            channel.set('id', new_id)  # Atualiza o ID com o novo valor
+            channel.set('id', new_id)
 
-    # Retorna o XML modificado em formato de bytes
     return etree.tostring(root, encoding='utf-8', pretty_print=True)
 
 # Função para salvar o XML como um arquivo GZIP
@@ -94,8 +87,18 @@ def save_as_gzip(content: bytes, output_path: str):
         logging.error(f"[ERROR] Falha ao salvar arquivo GZIP: {e}")
         raise
 
+# Função para salvar o XML como arquivo normal
+def save_as_xml(content: bytes, output_path: str):
+    try:
+        with open(output_path, 'wb') as f:
+            f.write(content)
+        logging.info(f"[INFO] Arquivo XML salvo como {output_path}.")
+    except Exception as e:
+        logging.error(f"[ERROR] Falha ao salvar arquivo XML: {e}")
+        raise
+
 # Função principal para executar o processo
-def main(config_path: str, mapping_path: str):
+def main(config_path: str, mapping_path: str, output_xml_path: str = 'epg.xml', output_gzip_path: str = 'epg.xml.gz'):
     try:
         # Carrega os dados de configuração (URL)
         config = load_config(config_path)
@@ -114,8 +117,10 @@ def main(config_path: str, mapping_path: str):
         # Mapeia os IDs no XML
         mapped_xml_data = map_channel_ids(xml_data, mappings)
         
-        # Salva o arquivo XML modificado como epg.xml.gz
-        save_as_gzip(mapped_xml_data, 'epg.xml.gz')
+        # Salva o arquivo XML modificado como .xml e .xml.gz
+        save_as_xml(mapped_xml_data, output_xml_path)  # Salva em XML simples
+        save_as_gzip(mapped_xml_data, output_gzip_path)  # Salva em XML GZIP
+        
     except Exception as e:
         logging.error(f"Erro no processo principal: {e}")
 
@@ -123,4 +128,7 @@ def main(config_path: str, mapping_path: str):
 if __name__ == "__main__":
     config_path = 'config.yml'  # Caminho para o arquivo de configuração
     mapping_path = 'channel_mappings.yml'  # Caminho para o arquivo de mapeamento
-    main(config_path, mapping_path)
+    output_xml_path = 'epg.xml'  # Caminho do arquivo de saída XML
+    output_gzip_path = 'epg.xml.gz'  # Caminho do arquivo de saída GZIP
+    main(config_path, mapping_path, output_xml_path, output_gzip_path)
+`
