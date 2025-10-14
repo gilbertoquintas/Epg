@@ -1,10 +1,11 @@
 # channel_mappings.yml
 channels:
-  - original_id: "Canal.Hollywood.HD.pt"
-    new_id: "Canal.Hollywood"
   - original_id: "SPORT.TV1.HD.pt"
     new_id: "SPORT.TV1.pt"
+    new_display_name: "SPORT TV 1"
   - original_id: "SPORT.TV2.HD.pt"
     new_id: "SPORT.TV2.pt"
+    new_display_name: "SPORT TV 2"
   - original_id: "Fuel.TV.HD.pt"
     new_id: "Fuel.TV.pt"
+    new_display_name: "FUEL TV"
