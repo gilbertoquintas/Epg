@@ -61,8 +61,8 @@ def load_channel_mappings(mapping_path: str) -> dict:
         raise
 
 
-def apply_channel_id_mapping(xml_path: str, mapping: dict, output_path: str):
-    """Aplica os mapeamentos ao arquivo XMLTV"""
+def apply_channel_id_mapping(xml_path: str, mapping: dict):
+    """Aplica os mapeamentos ao arquivo XMLTV, sobrescrevendo o epg.xml"""
     try:
         tree = ET.parse(xml_path)
         root = tree.getroot()
@@ -81,8 +81,8 @@ def apply_channel_id_mapping(xml_path: str, mapping: dict, output_path: str):
                 programme.set("channel", mapping[orig_id])
                 logging.debug(f"Programa {orig_id} → {mapping[orig_id]}")
 
-        tree.write(output_path, encoding='utf-8', xml_declaration=True)
-        logging.info(f"Arquivo XMLTV atualizado salvo em: {output_path}")
+        tree.write(xml_path, encoding='utf-8', xml_declaration=True)
+        logging.info(f"Arquivo XMLTV atualizado e sobrescrito: {xml_path}")
 
     except Exception as e:
         logging.error(f"Erro ao aplicar mapeamentos: {e}")
@@ -93,13 +93,12 @@ def main():
     config_path = 'config.yml'
     mappings_path = 'channel_mappings.yml'
     xml_path = 'epg.xml'
-    updated_xml_path = 'epg_atualizado.xml'
 
     try:
         url = load_config(config_path)
         download_and_decompress_file(url, xml_path)
         mappings = load_channel_mappings(mappings_path)
-        apply_channel_id_mapping(xml_path, mappings, updated_xml_path)
+        apply_channel_id_mapping(xml_path, mappings)
     except Exception as e:
         logging.error(f"Erro geral: {e}")
 
