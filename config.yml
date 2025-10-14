@@ -7,10 +7,4 @@
 # - fontes XMLTV (por exemplo: http://example.com/epg.xml)
 # - fontes JSON (estrutura simples: programs: [{channel, start, stop, title, desc}])
 
-sources:
-  - name: exemplo-xml
-    url: "https://epgshare01.online/epgshare01/epg_ripper_PT1.xml.gz"
-    type: xml
-
-
-output_file: "epg.xml"
+url: "https://epgshare01.online/epgshare01/epg_ripper_PT1.xml.gz"
