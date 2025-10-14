@@ -70,6 +70,12 @@ def map_channel_ids(xml_data: bytes, mappings: Dict[str, str]) -> bytes:
     # Retorna o XML modificado em formato de bytes
     return ET.tostring(root, encoding='utf-8')
 
+# Função para salvar o XML como um arquivo GZIP
+def save_as_gzip(content: bytes, output_path: str):
+    with gzip.open(output_path, 'wb') as f:
+        f.write(content)
+    print(f"[INFO] Arquivo comprimido salvo como {output_path}.")
+
 # Função principal para executar o processo
 def main(config_path: str, mapping_path: str):
     # Carrega os dados de configuração (URL)
@@ -88,10 +94,8 @@ def main(config_path: str, mapping_path: str):
     # Mapeia os IDs no XML
     mapped_xml_data = map_channel_ids(xml_data, mappings)
     
-    # Salva o arquivo XML modificado como epg.xml (sobrescrevendo o arquivo se já existir)
-    with open('epg.xml', 'wb') as f:
-        f.write(mapped_xml_data)
-    print("[INFO] Arquivo XML com IDs mapeados salvo como epg.xml.")
+    # Salva o arquivo XML modificado como epg.xml.gz
+    save_as_gzip(mapped_xml_data, 'epg.xml.gz')
 
 # Exemplo de uso
 if __name__ == "__main__":
