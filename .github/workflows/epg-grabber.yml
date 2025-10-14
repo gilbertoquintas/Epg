@@ -1,9 +1,9 @@
 name: EPG Grabber
 
 on:
-  workflow_dispatch: {}     # permite correr manualmente
+  workflow_dispatch: {}     # Permite correr manualmente
   schedule:
-    - cron: '0 */3 * * *'   # a cada 3 horas (ajusta conforme necessidade)
+    - cron: '0 */3 * * *'   # A cada 3 horas (ajusta conforme necessidade)
 
 permissions:
   contents: write  # Permissões de escrita para acessar e modificar arquivos
@@ -15,7 +15,7 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
-          persist-credentials: true  # permite push com GITHUB_TOKEN
+          persist-credentials: true  # Permite push com GITHUB_TOKEN
 
       - name: Set up Python
         uses: actions/setup-python@v4
@@ -40,18 +40,17 @@ jobs:
           echo "---- epg.xml head ----"
           head -n 200 epg.xml || true
 
-
-- name: Commit and push if changed
-  run: |
-    git config user.name "github-actions[bot]"
-    git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-    if git status --porcelain | grep -E "epg.xml|epg.xml.gz"; then
-      git add epg.xml epg.xml.gz
-      git commit -m "EPG update: $(date -u +"%Y-%m-%d %H:%M UTC")"
-      git push
-    else
-      echo "No changes to epg.xml or epg.xml.gz"
-    fi
+      - name: Commit and push if changed
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          if git status --porcelain | grep -E "epg.xml|epg.xml.gz"; then
+            git add epg.xml epg.xml.gz
+            git commit -m "EPG update: $(date -u +"%Y-%m-%d %H:%M UTC")"
+            git push
+          else
+            echo "No changes to epg.xml or epg.xml.gz"
+          fi
         # GITHUB_TOKEN já está disponível automaticamente como secret.
 
       - name: Upload artifact (optional)
