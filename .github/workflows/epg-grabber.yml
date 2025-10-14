@@ -3,7 +3,7 @@ name: EPG Grabber
 on:
   workflow_dispatch: {}     # Permite correr manualmente
   schedule:
-    - cron: '0 */3 * * *'   # A cada 3 horas (ajusta conforme necessidade)
+    - cron: '0 0 */2 * *'   # A cada 2 dias (ajusta conforme necessidade)
 
 permissions:
   contents: write  # Permissões de escrita para acessar e modificar arquivos
