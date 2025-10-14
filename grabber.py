@@ -9,116 +9,100 @@ import xml.etree.ElementTree as ET
 # Configuração do logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
-# Função para carregar a URL a partir do arquivo config.yml
+
 def load_config(config_path: str) -> str:
+    """Carrega a URL do arquivo config.yml"""
     try:
         with open(config_path, 'r', encoding='utf-8') as f:
             config = yaml.safe_load(f)
             url = config.get('url')
-            if not url:
-                logging.error("URL não encontrada no arquivo de configuração.")
-                raise ValueError("URL não encontrada no arquivo de configuração.")
-            # Verifica se a URL é válida (pelo menos começa com http:// ou https://)
-            if not (url.startswith('http://') or url.startswith('https://')):
-                logging.error(f"URL inválida encontrada: {url}")
-                raise ValueError(f"URL inválida encontrada: {url}")
+            if not url or not url.startswith(('http://', 'https://')):
+                raise ValueError("URL inválida no arquivo de configuração.")
             return url
     except Exception as e:
-        logging.error(f"Erro ao carregar o arquivo de configuração {config_path}: {e}")
+        logging.error(f"Erro ao carregar config: {e}")
         raise
 
-# Função para fazer o download do arquivo a partir da URL
-def download_and_decompress_file(url: str, output_path: str):
-    try:
-        logging.info(f"Iniciando o download do arquivo de {url}")
-        response = requests.get(url, timeout=10)  # Timeout de 10 segundos
-        response.raise_for_status()  # Garante que a requisição foi bem-sucedida
 
-        # Salva o arquivo comprimido temporariamente
-        temp_gz_path = 'temp_file.gz'
-        with open(temp_gz_path, 'wb') as f:
+def download_and_decompress_file(url: str, output_path: str):
+    """Faz o download do .gz e descomprime para XML"""
+    try:
+        logging.info(f"Baixando arquivo de: {url}")
+        response = requests.get(url, timeout=10)
+        response.raise_for_status()
+
+        with open('temp.gz', 'wb') as f:
             f.write(response.content)
 
-        # Descomprime o arquivo .gz para o caminho de saída
-        with gzip.open(temp_gz_path, 'rb') as f_in:
+        with gzip.open('temp.gz', 'rb') as f_in:
             with open(output_path, 'wb') as f_out:
-                shutil.copyfileobj(f_in, f_out)  # Copia o conteúdo descomprimido para o arquivo final
+                shutil.copyfileobj(f_in, f_out)
 
-        logging.info(f"Arquivo descomprimido e salvo como {output_path}")
-        
-        # Remove o arquivo temporário
-        os.remove(temp_gz_path)
-    except requests.exceptions.RequestException as e:
-        logging.error(f"Erro ao baixar o arquivo: {e}")
-        raise
-    except IOError as e:
-        logging.error(f"Erro ao salvar o arquivo no disco: {e}")
-        raise
+        os.remove('temp.gz')
+        logging.info(f"Arquivo salvo como: {output_path}")
+
     except Exception as e:
-        logging.error(f"Erro desconhecido: {e}")
+        logging.error(f"Erro no download ou descompressão: {e}")
         raise
 
-def apply_channel_id_mapping(xmltv_path: str, channel_mappings_path: str, output_path: str = None):
+
+def load_channel_mappings(mapping_path: str) -> dict:
+    """Carrega o arquivo de mapeamento YAML e retorna um dicionário {original_id: new_id}"""
     try:
-        # Carregar o mapeamento
-        with open(channel_mappings_path, 'r', encoding='utf-8') as f:
+        with open(mapping_path, 'r', encoding='utf-8') as f:
             mappings = yaml.safe_load(f)
-        
-        mapping_dict = {
-            channel['original_id']: channel['new_id']
-            for channel in mappings.get('channels', [])
-            if channel.get('original_id') and channel.get('new_id')
-        }
+            return {
+                ch['original_id']: ch['new_id']
+                for ch in mappings.get('channels', [])
+                if 'original_id' in ch and 'new_id' in ch
+            }
+    except Exception as e:
+        logging.error(f"Erro ao carregar mapeamentos: {e}")
+        raise
 
-        if not mapping_dict:
-            raise ValueError("Nenhum mapeamento válido encontrado no arquivo YAML.")
 
-        # Parse do XML
-        tree = ET.parse(xmltv_path)
+def apply_channel_id_mapping(xml_path: str, mapping: dict, output_path: str):
+    """Aplica os mapeamentos ao arquivo XMLTV"""
+    try:
+        tree = ET.parse(xml_path)
         root = tree.getroot()
 
-        # Atualizar <channel id="...">
+        # Atualiza <channel id="...">
         for channel in root.findall("channel"):
             orig_id = channel.get("id")
-            if orig_id in mapping_dict:
-                new_id = mapping_dict[orig_id]
-                logging.info(f"Atualizando canal: {orig_id} → {new_id}")
-                channel.set("id", new_id)
+            if orig_id in mapping:
+                channel.set("id", mapping[orig_id])
+                logging.debug(f"Canal {orig_id} → {mapping[orig_id]}")
 
-        # Atualizar <programme channel="...">
+        # Atualiza <programme channel="...">
         for programme in root.findall("programme"):
             orig_id = programme.get("channel")
-            if orig_id in mapping_dict:
-                new_id = mapping_dict[orig_id]
-                logging.info(f"Atualizando programa: {orig_id} → {new_id}")
-                programme.set("channel", new_id)
+            if orig_id in mapping:
+                programme.set("channel", mapping[orig_id])
+                logging.debug(f"Programa {orig_id} → {mapping[orig_id]}")
 
-        # Salvar novo arquivo
-        output_file = output_path if output_path else xmltv_path
-        tree.write(output_file, encoding="utf-8", xml_declaration=True)
-        logging.info(f"Arquivo XML atualizado salvo em: {output_file}")
+        tree.write(output_path, encoding='utf-8', xml_declaration=True)
+        logging.info(f"Arquivo XMLTV atualizado salvo em: {output_path}")
 
     except Exception as e:
-        logging.error(f"Erro ao aplicar mapeamento de canais no XML: {e}")
+        logging.error(f"Erro ao aplicar mapeamentos: {e}")
         raise
 
-# Função principal que carrega a URL e faz o download
-def main(config_path: str, output_path: str = 'epg.xml', channel_mappings_path: str = 'channel_mappings.yml'):
-    try:
-        # Carrega a URL do arquivo de configuração
-        url = load_config(config_path)
-        
-        # Faz o download e descomprime o arquivo XMLTV
-        download_and_decompress_file(url, output_path)
-        
-        # Exemplo de atualização do ID do canal
-        apply_channel_id_mapping('epg.xml', 'channel_mappings.yml')
-    
-    except Exception as e:
-        logging.error(f"Erro no processo: {e}")
 
-# Exemplo de uso
+def main():
+    config_path = 'config.yml'
+    mappings_path = 'channel_mappings.yml'
+    xml_path = 'epg.xml'
+    updated_xml_path = 'epg_atualizado.xml'
+
+    try:
+        url = load_config(config_path)
+        download_and_decompress_file(url, xml_path)
+        mappings = load_channel_mappings(mappings_path)
+        apply_channel_id_mapping(xml_path, mappings, updated_xml_path)
+    except Exception as e:
+        logging.error(f"Erro geral: {e}")
+
+
 if __name__ == "__main__":
-    config_path = 'config.yml'  # Caminho para o arquivo de configuração
-    channel_mappings_path = 'channel_mappings.yml'  # Caminho para o arquivo de mapeamento dos canais
-    main(config_path, channel_mappings_path=channel_mappings_path)
+    main()
