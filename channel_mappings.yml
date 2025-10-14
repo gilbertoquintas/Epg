@@ -4,3 +4,5 @@ channels:
     new_id: "Canal.Hollywood"
   - original_id: "SPORT.TV1.HD.pt"
     new_id: "SPORT.TV.1.pt"
+  - original_id: "SPORT.TV2.HD.pt"
+    new_id: "SPORT.TV2.pt"
