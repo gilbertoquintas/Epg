@@ -88,10 +88,10 @@ def main(config_path: str, mapping_path: str):
     # Mapeia os IDs no XML
     mapped_xml_data = map_channel_ids(xml_data, mappings)
     
-    # Aqui você pode salvar o arquivo ou retornar o XML modificado
-    with open('output.xml', 'wb') as f:
+    # Salva o arquivo XML modificado como epg.xml (sobrescrevendo o arquivo se já existir)
+    with open('epg.xml', 'wb') as f:
         f.write(mapped_xml_data)
-    print("[INFO] Arquivo XML com IDs mapeados salvo como output.xml.")
+    print("[INFO] Arquivo XML com IDs mapeados salvo como epg.xml.")
 
 # Exemplo de uso
 if __name__ == "__main__":
