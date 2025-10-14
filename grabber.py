@@ -83,5 +83,13 @@ def ensure_display_name(channel_el: ET.Element, fallback: Optional[str] = None):
         dn = ET.SubElement(channel_el, 'display-name')
     if (dn.text is None or dn.text.strip() == '') and fallback:
         dn.text = fallback
+def save_compressed_gz(filename: str, data: bytes):
+    """Salva os dados em um arquivo .gz."""
+    with gzip.open(filename, 'wb') as f:
+        f.write(data)
+    print(f"[INFO] Arquivo salvo e comprimido como {filename}")
+
+# Salvar o arquivo XML comprimido em .gz
+save_compressed_gz('output.xml.gz', xml_data)
 
 # -------
