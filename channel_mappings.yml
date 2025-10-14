@@ -6,3 +6,5 @@ channels:
     new_id: "SPORT.TV1.pt"
   - original_id: "SPORT.TV2.HD.pt"
     new_id: "SPORT.TV2.pt"
+  - original_id: "Fuel.TV.HD.pt"
+    new_id: "Fuel.TV.pt"
