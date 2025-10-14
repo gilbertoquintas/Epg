@@ -3,6 +3,6 @@ channels:
   - original_id: "Canal.Hollywood.HD.pt"
     new_id: "Canal.Hollywood"
   - original_id: "SPORT.TV1.HD.pt"
-    new_id: "SPORT.TV.1.pt"
+    new_id: "SPORT.TV1.pt"
   - original_id: "SPORT.TV2.HD.pt"
     new_id: "SPORT.TV2.pt"
