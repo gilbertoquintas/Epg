@@ -18,3 +18,6 @@ channels:
   - original_id: "Fuel.TV.HD.pt"
     new_id: "Fuel.TV.pt"
     new_display_name: "FUEL TV"
+  - original_id: "AMC.Crime.HD.pt"
+    new_id: "AMC.Crime.pt"
+    new_display_name: "AMC Crime"
