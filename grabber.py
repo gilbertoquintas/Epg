@@ -47,18 +47,22 @@ def download_and_decompress_file(url: str, output_path: str):
 
 
 def load_channel_mappings(mapping_path: str) -> dict:
-    """Carrega o arquivo de mapeamento YAML e retorna um dicionário {original_id: new_id}"""
+    """Carrega o arquivo de mapeamento YAML e retorna um dicionário {original_id: {new_id, new_display_name}}"""
     try:
         with open(mapping_path, 'r', encoding='utf-8') as f:
             mappings = yaml.safe_load(f)
-            return {
-                ch['original_id']: ch['new_id']
-                for ch in mappings.get('channels', [])
-                if 'original_id' in ch and 'new_id' in ch
-            }
+            result = {}
+            for ch in mappings.get('channels', []):
+                if 'original_id' in ch and 'new_id' in ch:
+                    result[ch['original_id']] = {
+                        'new_id': ch['new_id'],
+                        'new_display_name': ch.get('new_display_name')
+                    }
+            return result
     except Exception as e:
         logging.error(f"Erro ao carregar mapeamentos: {e}")
         raise
+
 
 
 def apply_channel_id_mapping(xml_path: str, mapping: dict):
@@ -67,12 +71,18 @@ def apply_channel_id_mapping(xml_path: str, mapping: dict):
         tree = ET.parse(xml_path)
         root = tree.getroot()
 
-        # Atualiza <channel id="...">
+        # Atualiza <channel id="..."> e <display-name>
         for channel in root.findall("channel"):
             orig_id = channel.get("id")
             if orig_id in mapping:
-                channel.set("id", mapping[orig_id])
-                logging.debug(f"Canal {orig_id} → {mapping[orig_id]}")
+                new_id = mapping[orig_id].get("new_id", orig_id)
+                channel.set("id", new_id)
+                new_name = mapping[orig_id].get("new_display_name")
+                if new_name:
+                    display_name_el = channel.find("display-name")
+                    if display_name_el is not None:
+                        display_name_el.text = new_name
+                logging.debug(f"Canal {orig_id} → {new_id}, display-name → {new_name}")
 
         # Atualiza <programme channel="...">
         for programme in root.findall("programme"):
