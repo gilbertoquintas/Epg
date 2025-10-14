@@ -111,4 +111,6 @@ def main(config_path: str, mapping_path: str):
 
 # Exemplo de uso
 if __name__ == "__main__":
-    config_path = 'config
+    config_path = 'config.yml'  # Caminho para o arquivo de configuração
+    mapping_path = 'channel_mappings.yml'  # Caminho para o arquivo de mapeamento
+    main(config_path, mapping_path)
