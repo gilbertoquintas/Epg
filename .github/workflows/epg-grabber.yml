@@ -45,7 +45,7 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           if git status --porcelain | grep -E "epg.xml | epg2.xml"; then
-            git add epg.xml | epg2.xml
+            git add epg.xml epg2.xml
             git commit -m "EPG update: $(date -u +"%Y-%m-%d %H:%M UTC")"
             git push
           else
