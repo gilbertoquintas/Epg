@@ -100,17 +100,32 @@ def apply_channel_id_mapping(xml_path: str, mapping: dict):
 
 
 def main():
-    config_path = 'config.yml'
-    mappings_path = 'channel_mappings.yml'
-    xml_path = 'epg.xml'
+    # Lista de tarefas com múltiplos arquivos
+    tasks = [
+        {
+            "config_path": "config.yml",
+            "mapping_path": "channel_mappings.yml",
+            "output_path": "epg.xml"
+        },
+        {
+            "config_path": "config2.yml",
+            "mapping_path": "channel_mappings2.yml",
+            "output_path": "epg2.xml"
+        }
+        # ➕ Adicione mais entradas conforme necessário
+    ]
 
-    try:
-        url = load_config(config_path)
-        download_and_decompress_file(url, xml_path)
-        mappings = load_channel_mappings(mappings_path)
-        apply_channel_id_mapping(xml_path, mappings)
-    except Exception as e:
-        logging.error(f"Erro geral: {e}")
+    for task in tasks:
+        try:
+            logging.info(f"🟢 Processando: {task['config_path']} + {task['mapping_path']} → {task['output_path']}")
+
+            url = load_config(task["config_path"])
+            download_and_decompress_file(url, task["output_path"])
+            mappings = load_channel_mappings(task["mapping_path"])
+            apply_channel_id_mapping(task["output_path"], mappings)
+
+        except Exception as e:
+            logging.error(f"❌ Erro ao processar {task['config_path']} / {task['mapping_path']}: {e}")
 
 
 if __name__ == "__main__":
